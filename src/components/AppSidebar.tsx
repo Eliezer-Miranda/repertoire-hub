@@ -49,16 +49,6 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="rounded-xl p-3 bg-gradient-primary/10 border border-primary/20">
-          <div className="text-xs font-semibold text-foreground">Servidor SMB</div>
-          <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">/storage/biblioteca</div>
-          <div className="flex items-center gap-1.5 mt-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-            <span className="text-[11px] text-muted-foreground">Modo demonstração</span>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

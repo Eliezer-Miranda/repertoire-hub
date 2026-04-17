@@ -61,8 +61,9 @@ export const useLibrary = create<LibraryState>()(
       // Custom hydration to convert favorites array back to Set
       onRehydrateStorage: () => (state) => {
         if (state && Array.isArray(state.favorites)) {
-          // @ts-expect-error - converting from persisted array
-          state.favorites = new Set(state.favorites);
+          (state as unknown as { favorites: Set<string> }).favorites = new Set(
+            state.favorites as unknown as string[]
+          );
         }
       },
     }

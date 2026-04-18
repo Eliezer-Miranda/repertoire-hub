@@ -189,6 +189,10 @@ export default function Repertoires() {
                 .map((it, i) => {
                   const s = songs.find((x) => x.id === it.songId);
                   if (!s) return null;
+                  const clickBpm = it.clickBpm ?? s.bpm ?? 90;
+                  const ts = it.timeSignature ?? "4/4";
+                  const clickOn = it.clickEnabled !== false;
+                  const isRendering = rendering === it.songId;
                   return (
                     <div key={it.songId} className="flex items-center gap-4 p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                       <div className="w-8 text-center font-mono text-sm text-muted-foreground">{i + 1}</div>
@@ -202,10 +206,32 @@ export default function Repertoires() {
                         <div className="font-semibold truncate">{s.title}</div>
                         <div className="text-sm text-muted-foreground truncate">{s.artist} · {s.album}</div>
                       </div>
-                      <div className="hidden sm:flex items-center gap-3 text-xs font-mono">
+                      <div className="hidden md:flex items-center gap-3 text-xs font-mono">
                         {s.key && <span className="px-2 py-1 rounded bg-primary/10 text-primary font-semibold">{s.key}</span>}
-                        {s.bpm && <span className="text-muted-foreground">{s.bpm} BPM</span>}
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 px-2 py-1 rounded font-semibold",
+                            clickOn ? "bg-accent/40 text-foreground" : "bg-muted/40 text-muted-foreground line-through"
+                          )}
+                          title={clickOn ? "Click ativado" : "Click desativado"}
+                        >
+                          <Activity className="h-3 w-3" />
+                          {clickBpm} BPM · {ts}
+                        </span>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Baixar trilha de click (.wav)"
+                        onClick={() => generateClickFor(it.songId)}
+                        disabled={isRendering}
+                      >
+                        {isRendering ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileAudio className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   );
                 })}

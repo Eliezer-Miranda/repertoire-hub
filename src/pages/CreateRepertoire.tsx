@@ -22,11 +22,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, X, Save, Music2 } from "lucide-react";
+import { GripVertical, X, Save, Music2, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Song } from "@/types/music";
+import { Song, RepertoireItem } from "@/types/music";
 import { AlbumThumb } from "@/components/AlbumThumb";
+import { Switch } from "@/components/ui/switch";
 
 function SortableRow({ song, onRemove }: { song: Song; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =

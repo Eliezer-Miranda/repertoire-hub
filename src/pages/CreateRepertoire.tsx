@@ -124,6 +124,7 @@ export default function CreateRepertoire() {
 
   const [q, setQ] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [clicks, setClicks] = useState<Record<string, ClickConfig>>({});
   const [name, setName] = useState("");
   const [minister, setMinister] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -148,6 +149,18 @@ export default function CreateRepertoire() {
 
   const toggleSelect = (id: string) => {
     setSelectedIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+    setClicks((cur) => {
+      if (cur[id]) return cur;
+      const song = songs.find((s) => s.id === id);
+      return {
+        ...cur,
+        [id]: {
+          bpm: song?.bpm ?? 90,
+          timeSignature: "4/4",
+          enabled: true,
+        },
+      };
+    });
   };
 
   const onDragEnd = (e: DragEndEvent) => {
@@ -167,12 +180,22 @@ export default function CreateRepertoire() {
       toast.error("Selecione ao menos uma música.");
       return;
     }
+    const items: RepertoireItem[] = selectedIds.map((sid, order) => {
+      const c = clicks[sid];
+      return {
+        songId: sid,
+        order,
+        clickBpm: c?.bpm,
+        timeSignature: c?.timeSignature,
+        clickEnabled: c?.enabled ?? false,
+      };
+    });
     const id = addRepertoire({
       name,
       minister,
       date: new Date(date).toISOString(),
       service,
-      items: selectedIds.map((sid, order) => ({ songId: sid, order })),
+      items,
     });
     toast.success(`Repertório "${name}" criado!`, {
       description: `${selectedIds.length} faixas serão copiadas para /storage/vs/${name}/`,
@@ -268,7 +291,13 @@ export default function CreateRepertoire() {
               <SortableContext items={selectedIds} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2 max-h-[40vh] overflow-y-auto scrollbar-thin pr-1">
                   {selectedSongs.map((s) => (
-                    <SortableRow key={s.id} song={s} onRemove={() => toggleSelect(s.id)} />
+                    <SortableRow
+                      key={s.id}
+                      song={s}
+                      click={clicks[s.id] ?? { bpm: s.bpm ?? 90, timeSignature: "4/4", enabled: true }}
+                      onChange={(c) => setClicks((cur) => ({ ...cur, [s.id]: c }))}
+                      onRemove={() => toggleSelect(s.id)}
+                    />
                   ))}
                 </div>
               </SortableContext>

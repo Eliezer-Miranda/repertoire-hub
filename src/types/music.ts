@@ -33,6 +33,12 @@ export type Artist = {
 export type RepertoireItem = {
   songId: string;
   order: number;
+  /** BPM do click (metrônomo) — pode diferir do BPM da música. */
+  clickBpm?: number;
+  /** Compasso/andamento do click. */
+  timeSignature?: "2/4" | "3/4" | "4/4" | "6/8";
+  /** Se o click deve tocar para esta faixa. */
+  clickEnabled?: boolean;
 };
 
 export type Repertoire = {

@@ -3,6 +3,7 @@ import { Play, Star, Music2, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLibrary } from "@/store/useLibrary";
 import { cn } from "@/lib/utils";
+import { useAlbumCover } from "@/hooks/useArtwork";
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -21,6 +22,7 @@ export function SongCard({ song, selectable, selected, onToggleSelect }: Props) 
   const { playSong, currentSongId, isPlaying, favorites, toggleFavorite } = useLibrary();
   const isCurrent = currentSongId === song.id;
   const isFav = favorites.has(song.id);
+  const remoteCover = useAlbumCover(song.artist, song.album);
 
   return (
     <div className="group relative rounded-2xl bg-card border border-border/50 p-3 card-hover overflow-hidden">
@@ -28,8 +30,16 @@ export function SongCard({ song, selectable, selected, onToggleSelect }: Props) 
         className="relative aspect-square rounded-xl overflow-hidden mb-3 shadow-card"
         style={{ background: song.cover }}
       >
+        {remoteCover && (
+          <img
+            src={remoteCover}
+            alt={`Capa do álbum ${song.album} de ${song.artist}`}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover animate-fade-in"
+          />
+        )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
-          <Music2 className="h-12 w-12 text-white/30 group-hover:opacity-0 transition-opacity" />
+          <Music2 className={cn("h-12 w-12 text-white/30 group-hover:opacity-0 transition-opacity", remoteCover && "opacity-0")} />
           <Button
             size="icon"
             onClick={() => playSong(song.id)}

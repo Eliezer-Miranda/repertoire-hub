@@ -26,6 +26,7 @@ import { GripVertical, X, Save, Music2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Song } from "@/types/music";
+import { AlbumThumb } from "@/components/AlbumThumb";
 
 function SortableRow({ song, onRemove }: { song: Song; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -48,7 +49,12 @@ function SortableRow({ song, onRemove }: { song: Song; onRemove: () => void }) {
       >
         <GripVertical className="h-5 w-5" />
       </button>
-      <div className="h-10 w-10 rounded-md shrink-0" style={{ background: song.cover }} />
+      <AlbumThumb
+        artist={song.artist}
+        album={song.album}
+        fallback={song.cover}
+        className="h-10 w-10 rounded-md shadow-card"
+      />
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate">{song.title}</div>
         <div className="text-xs text-muted-foreground truncate">{song.artist}</div>

@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+#Zertec
 
 TODO: Document your project here

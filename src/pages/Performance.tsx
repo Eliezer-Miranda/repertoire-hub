@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLibrary } from "@/store/useLibrary";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AlbumThumb } from "@/components/AlbumThumb";
+import { useMetronome } from "@/hooks/useMetronome";
+import { cn } from "@/lib/utils";
 
 export default function Performance() {
   const { repertoires, songs, isPlaying, togglePlay, playSong } = useLibrary();
   const rep = repertoires[0];
   const [idx, setIdx] = useState(0);
+  const { start, stop, isRunning, currentBeat, beatsPerBar } = useMetronome();
+
+  const items = rep ? [...rep.items].sort((a, b) => a.order - b.order) : [];
+  const currentItem = items[idx];
+  const current = songs.find((s) => s.id === currentItem?.songId);
+  const next = songs.find((s) => s.id === items[idx + 1]?.songId);
+
+  // Para o click ao trocar de faixa
+  useEffect(() => {
+    stop();
+  }, [idx, stop]);
 
   if (!rep) {
     return (
@@ -18,9 +32,7 @@ export default function Performance() {
     );
   }
 
-  const items = [...rep.items].sort((a, b) => a.order - b.order);
-  const current = songs.find((s) => s.id === items[idx]?.songId);
-  const next = songs.find((s) => s.id === items[idx + 1]?.songId);
+  if (!current) return null;
 
   const goNext = () => {
     if (idx < items.length - 1) {
@@ -35,7 +47,14 @@ export default function Performance() {
     }
   };
 
-  if (!current) return null;
+  const clickBpm = currentItem?.clickBpm ?? current.bpm ?? 90;
+  const timeSig = currentItem?.timeSignature ?? "4/4";
+  const clickAvailable = currentItem?.clickEnabled !== false;
+
+  const toggleClick = () => {
+    if (isRunning) stop();
+    else start(clickBpm, timeSig);
+  };
 
   return (
     <div className="min-h-full flex flex-col items-center justify-center p-8 text-center">
@@ -43,15 +62,17 @@ export default function Performance() {
         Modo Performance · {idx + 1} / {items.length}
       </div>
 
-      <div
+      <AlbumThumb
+        artist={current.artist}
+        album={current.album}
+        fallback={current.cover}
         className="h-64 w-64 rounded-3xl shadow-elevated mb-8"
-        style={{ background: current.cover }}
       />
 
       <h1 className="font-display text-6xl lg:text-7xl font-bold mb-3">{current.title}</h1>
       <p className="text-2xl text-muted-foreground mb-6">{current.artist}</p>
 
-      <div className="flex items-center gap-6 mb-12">
+      <div className="flex items-center gap-6 mb-8">
         {current.key && (
           <div className="text-center">
             <div className="text-5xl font-display font-bold text-primary">{current.key}</div>
@@ -64,7 +85,45 @@ export default function Performance() {
             <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">BPM</div>
           </div>
         )}
+        {clickAvailable && (
+          <div className="text-center">
+            <div className="text-5xl font-display font-bold">{clickBpm}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
+              Click {timeSig}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Click controls */}
+      {clickAvailable && (
+        <div className="flex items-center gap-3 mb-8 px-4 py-3 rounded-2xl bg-card border border-border/50">
+          <Button
+            size="sm"
+            variant={isRunning ? "default" : "outline"}
+            onClick={toggleClick}
+            className={cn("gap-2", isRunning && "bg-primary text-primary-foreground shadow-glow")}
+          >
+            <Activity className="h-4 w-4" />
+            {isRunning ? "Parar click" : "Iniciar click"}
+          </Button>
+          <div className="flex items-center gap-1.5 pl-2 border-l border-border">
+            {Array.from({ length: beatsPerBar }).map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "h-3 w-3 rounded-full transition-all duration-75",
+                  isRunning && currentBeat === i
+                    ? i === 0
+                      ? "bg-accent scale-150 shadow-glow"
+                      : "bg-primary scale-125"
+                    : "bg-muted"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-4">
         <Button size="lg" variant="outline" onClick={goPrev} disabled={idx === 0}>

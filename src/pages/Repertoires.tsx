@@ -1,11 +1,13 @@
 import { useLibrary } from "@/store/useLibrary";
 import { Button } from "@/components/ui/button";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Calendar, User2, Music2, Trash2, Download, Radio } from "lucide-react";
+import { Plus, Calendar, User2, Music2, Trash2, Download, Radio, Activity, Loader2, FileAudio } from "lucide-react";
 import { Repertoire } from "@/types/music";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { AlbumThumb } from "@/components/AlbumThumb";
+import { renderClickWav, downloadBlob, sanitizeFilename } from "@/lib/clickWav";
+import { toast } from "sonner";
 
 const serviceLabels = {
   manha: "Manhã",
@@ -21,6 +23,64 @@ export default function Repertoires() {
     params.get("id") || repertoires[0]?.id || null
   );
   const selected = repertoires.find((r) => r.id === selectedId);
+  const [rendering, setRendering] = useState<string | null>(null);
+  const [renderingAll, setRenderingAll] = useState(false);
+
+  const generateClickFor = async (songId: string) => {
+    if (!selected) return;
+    const item = selected.items.find((i) => i.songId === songId);
+    const song = songs.find((s) => s.id === songId);
+    if (!item || !song) return;
+    const bpm = item.clickBpm ?? song.bpm ?? 90;
+    const ts = item.timeSignature ?? "4/4";
+    setRendering(songId);
+    try {
+      const blob = await renderClickWav({
+        bpm,
+        timeSignature: ts,
+        durationSec: song.duration,
+      });
+      const fname = `${sanitizeFilename(song.artist)}-${sanitizeFilename(song.title)}_click_${bpm}bpm_${ts.replace("/", "-")}.wav`;
+      downloadBlob(blob, fname);
+      toast.success("Trilha de click gerada", {
+        description: `${fname} (${bpm} BPM · ${ts} · ${Math.round(song.duration)}s)`,
+      });
+    } catch (e) {
+      toast.error("Falha ao gerar WAV", { description: String(e) });
+    } finally {
+      setRendering(null);
+    }
+  };
+
+  const generateAllClicks = async () => {
+    if (!selected) return;
+    setRenderingAll(true);
+    let count = 0;
+    try {
+      for (const item of [...selected.items].sort((a, b) => a.order - b.order)) {
+        const song = songs.find((s) => s.id === item.songId);
+        if (!song) continue;
+        if (item.clickEnabled === false) continue;
+        const bpm = item.clickBpm ?? song.bpm ?? 90;
+        const ts = item.timeSignature ?? "4/4";
+        const blob = await renderClickWav({
+          bpm,
+          timeSignature: ts,
+          durationSec: song.duration,
+        });
+        const fname = `${String(item.order + 1).padStart(2, "0")}_${sanitizeFilename(song.artist)}-${sanitizeFilename(song.title)}_click.wav`;
+        downloadBlob(blob, fname);
+        count += 1;
+        // pequena pausa para o navegador processar os downloads
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      toast.success(`${count} trilha(s) de click geradas`);
+    } catch (e) {
+      toast.error("Falha ao gerar trilhas", { description: String(e) });
+    } finally {
+      setRenderingAll(false);
+    }
+  };
 
   const exportTxt = (r: Repertoire) => {
     const lines = r.items
@@ -94,9 +154,19 @@ export default function Repertoires() {
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">{serviceLabels[selected.service]}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-wrap gap-2 shrink-0 justify-end">
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
                     <Link to="/performance"><Radio className="h-4 w-4" /> Performance</Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={generateAllClicks}
+                    disabled={renderingAll}
+                  >
+                    {renderingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileAudio className="h-4 w-4" />}
+                    Gerar clicks (.wav)
                   </Button>
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={() => exportTxt(selected)}>
                     <Download className="h-4 w-4" /> Exportar
@@ -119,6 +189,10 @@ export default function Repertoires() {
                 .map((it, i) => {
                   const s = songs.find((x) => x.id === it.songId);
                   if (!s) return null;
+                  const clickBpm = it.clickBpm ?? s.bpm ?? 90;
+                  const ts = it.timeSignature ?? "4/4";
+                  const clickOn = it.clickEnabled !== false;
+                  const isRendering = rendering === it.songId;
                   return (
                     <div key={it.songId} className="flex items-center gap-4 p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                       <div className="w-8 text-center font-mono text-sm text-muted-foreground">{i + 1}</div>
@@ -132,10 +206,32 @@ export default function Repertoires() {
                         <div className="font-semibold truncate">{s.title}</div>
                         <div className="text-sm text-muted-foreground truncate">{s.artist} · {s.album}</div>
                       </div>
-                      <div className="hidden sm:flex items-center gap-3 text-xs font-mono">
+                      <div className="hidden md:flex items-center gap-3 text-xs font-mono">
                         {s.key && <span className="px-2 py-1 rounded bg-primary/10 text-primary font-semibold">{s.key}</span>}
-                        {s.bpm && <span className="text-muted-foreground">{s.bpm} BPM</span>}
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 px-2 py-1 rounded font-semibold",
+                            clickOn ? "bg-accent/40 text-foreground" : "bg-muted/40 text-muted-foreground line-through"
+                          )}
+                          title={clickOn ? "Click ativado" : "Click desativado"}
+                        >
+                          <Activity className="h-3 w-3" />
+                          {clickBpm} BPM · {ts}
+                        </span>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Baixar trilha de click (.wav)"
+                        onClick={() => generateClickFor(it.songId)}
+                        disabled={isRendering}
+                      >
+                        {isRendering ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileAudio className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   );
                 })}

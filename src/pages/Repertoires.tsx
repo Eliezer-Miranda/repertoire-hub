@@ -5,6 +5,7 @@ import { Plus, Calendar, User2, Music2, Trash2, Download, Radio } from "lucide-r
 import { Repertoire } from "@/types/music";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { AlbumThumb } from "@/components/AlbumThumb";
 
 const serviceLabels = {
   manha: "Manhã",
@@ -121,7 +122,12 @@ export default function Repertoires() {
                   return (
                     <div key={it.songId} className="flex items-center gap-4 p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                       <div className="w-8 text-center font-mono text-sm text-muted-foreground">{i + 1}</div>
-                      <div className="h-12 w-12 rounded-md shrink-0" style={{ background: s.cover }} />
+                      <AlbumThumb
+                        artist={s.artist}
+                        album={s.album}
+                        fallback={s.cover}
+                        className="h-12 w-12 rounded-md shadow-card"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate">{s.title}</div>
                         <div className="text-sm text-muted-foreground truncate">{s.artist} · {s.album}</div>

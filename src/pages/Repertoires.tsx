@@ -154,9 +154,19 @@ export default function Repertoires() {
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">{serviceLabels[selected.service]}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-wrap gap-2 shrink-0 justify-end">
                   <Button variant="outline" size="sm" className="gap-1.5" asChild>
                     <Link to="/performance"><Radio className="h-4 w-4" /> Performance</Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={generateAllClicks}
+                    disabled={renderingAll}
+                  >
+                    {renderingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileAudio className="h-4 w-4" />}
+                    Gerar clicks (.wav)
                   </Button>
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={() => exportTxt(selected)}>
                     <Download className="h-4 w-4" /> Exportar

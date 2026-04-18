@@ -29,7 +29,19 @@ import { Song, RepertoireItem } from "@/types/music";
 import { AlbumThumb } from "@/components/AlbumThumb";
 import { Switch } from "@/components/ui/switch";
 
-function SortableRow({ song, onRemove }: { song: Song; onRemove: () => void }) {
+type ClickConfig = { bpm: number; timeSignature: "2/4" | "3/4" | "4/4" | "6/8"; enabled: boolean };
+
+function SortableRow({
+  song,
+  click,
+  onChange,
+  onRemove,
+}: {
+  song: Song;
+  click: ClickConfig;
+  onChange: (c: ClickConfig) => void;
+  onRemove: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: song.id });
   const style = {
@@ -41,32 +53,67 @@ function SortableRow({ song, onRemove }: { song: Song; onRemove: () => void }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-2.5 rounded-xl bg-card border border-border/50 hover:border-primary/40 transition-colors"
+      className="rounded-xl bg-card border border-border/50 hover:border-primary/40 transition-colors overflow-hidden"
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
-      <AlbumThumb
-        artist={song.artist}
-        album={song.album}
-        fallback={song.cover}
-        className="h-10 w-10 rounded-md shadow-card"
-      />
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm truncate">{song.title}</div>
-        <div className="text-xs text-muted-foreground truncate">{song.artist}</div>
+      <div className="flex items-center gap-3 p-2.5">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+        <AlbumThumb
+          artist={song.artist}
+          album={song.album}
+          fallback={song.cover}
+          className="h-10 w-10 rounded-md shadow-card"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-sm truncate">{song.title}</div>
+          <div className="text-xs text-muted-foreground truncate">{song.artist}</div>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRemove}>
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-      <div className="hidden sm:flex items-center gap-3 text-xs font-mono text-muted-foreground">
-        {song.key && <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">{song.key}</span>}
-        {song.bpm && <span>{song.bpm} BPM</span>}
+
+      <div className="px-2.5 pb-2.5 pt-0 flex items-center gap-2 border-t border-border/40 bg-muted/30">
+        <div className="flex items-center gap-1.5 pl-1">
+          <Activity className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Click</span>
+        </div>
+        <Switch
+          checked={click.enabled}
+          onCheckedChange={(v) => onChange({ ...click, enabled: v })}
+          className="scale-75 -ml-1"
+        />
+        <Input
+          type="number"
+          min={40}
+          max={240}
+          value={click.bpm}
+          onChange={(e) => onChange({ ...click, bpm: parseInt(e.target.value) || 0 })}
+          disabled={!click.enabled}
+          className="h-7 w-16 text-xs font-mono px-2"
+        />
+        <span className="text-[10px] text-muted-foreground">BPM</span>
+        <Select
+          value={click.timeSignature}
+          onValueChange={(v) => onChange({ ...click, timeSignature: v as ClickConfig["timeSignature"] })}
+          disabled={!click.enabled}
+        >
+          <SelectTrigger className="h-7 w-[70px] text-xs font-mono ml-auto">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="2/4">2/4</SelectItem>
+            <SelectItem value="3/4">3/4</SelectItem>
+            <SelectItem value="4/4">4/4</SelectItem>
+            <SelectItem value="6/8">6/8</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRemove}>
-        <X className="h-4 w-4" />
-      </Button>
     </div>
   );
 }

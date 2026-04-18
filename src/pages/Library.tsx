@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useLibrary } from "@/store/useLibrary";
 import { SongCard } from "@/components/SongCard";
+import { AlbumCard } from "@/components/AlbumCard";
+import { ArtistCard } from "@/components/ArtistCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { mockArtists, mockAlbums } from "@/data/mockLibrary";
@@ -71,14 +73,7 @@ export default function Library() {
         <TabsContent value="albums" className="mt-6">
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
             {mockAlbums.map((a) => (
-              <div key={a.id} className="rounded-2xl bg-card border border-border/50 p-3 card-hover">
-                <div className="aspect-square rounded-xl mb-3 shadow-card" style={{ background: a.cover }} />
-                <div className="px-1">
-                  <div className="font-semibold text-sm truncate">{a.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{a.artist}</div>
-                  <div className="text-[11px] text-muted-foreground mt-1">{a.songCount} faixas · {a.year}</div>
-                </div>
-              </div>
+              <AlbumCard key={a.id} album={a} />
             ))}
           </div>
         </TabsContent>
@@ -86,13 +81,7 @@ export default function Library() {
         <TabsContent value="artists" className="mt-6">
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
             {mockArtists.map((a) => (
-              <div key={a.id} className="rounded-2xl bg-card border border-border/50 p-3 card-hover text-center">
-                <div className="aspect-square rounded-full mb-3 shadow-card mx-auto" style={{ background: a.cover }} />
-                <div className="font-semibold text-sm truncate">{a.name}</div>
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  {a.albumCount} álbuns · {a.songCount} faixas
-                </div>
-              </div>
+              <ArtistCard key={a.id} artist={a} />
             ))}
           </div>
         </TabsContent>

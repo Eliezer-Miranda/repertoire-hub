@@ -1,10 +1,44 @@
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Server, FolderOutput, Cpu, Code2 } from "lucide-react";
+import { Server, FolderOutput, Cpu, Code2, Music, Upload, Trash2, CheckCircle2 } from "lucide-react";
+import { ALL_KEYS, deletePad, listPads, savePad, type MusicalKey } from "@/lib/padsStore";
+import { toast } from "sonner";
 
 export default function Settings() {
+  const [pads, setPads] = useState<Record<string, { name: string; size: number }>>({});
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const refresh = async () => setPads(await listPads());
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const onPick = (key: MusicalKey) => inputRefs.current[key]?.click();
+
+  const onFile = async (key: MusicalKey, file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("audio/") && !/\.(wav|mp3|ogg|flac|m4a)$/i.test(file.name)) {
+      toast.error("Selecione um arquivo de áudio.");
+      return;
+    }
+    try {
+      await savePad(key, file);
+      await refresh();
+      toast.success(`Pad ${key} salvo`);
+    } catch (e) {
+      toast.error("Falha ao salvar pad", { description: String(e) });
+    }
+  };
+
+  const onDelete = async (key: MusicalKey) => {
+    await deletePad(key);
+    await refresh();
+    toast.success(`Pad ${key} removido`);
+  };
+
   return (
     <div className="p-6 lg:p-8 max-w-3xl space-y-6 animate-fade-in">
       <header>
@@ -13,6 +47,72 @@ export default function Settings() {
           Ajustes do agente local e integração com o Reaper.
         </p>
       </header>
+
+      <Card className="p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Music className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-semibold">Pads por tom</h2>
+            <p className="text-xs text-muted-foreground">
+              Envie um arquivo de pad para cada tonalidade. Esses arquivos serão copiados para a pasta{" "}
+              <code className="text-primary font-mono">click/</code> de cada música ao salvar o repertório.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2">
+          {ALL_KEYS.map((k) => {
+            const has = !!pads[k];
+            return (
+              <div
+                key={k}
+                className="flex items-center gap-2 p-2 rounded-lg border border-border/60 bg-muted/20"
+              >
+                <div className="w-10 h-10 rounded-md bg-card flex items-center justify-center font-mono font-bold text-sm shrink-0">
+                  {k}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {has ? (
+                    <>
+                      <div className="flex items-center gap-1 text-xs">
+                        <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
+                        <span className="truncate font-medium">{pads[k].name}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {(pads[k].size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic">Sem arquivo</div>
+                  )}
+                </div>
+                <input
+                  ref={(el) => (inputRefs.current[k] = el)}
+                  type="file"
+                  accept="audio/*,.wav,.mp3,.ogg,.flac,.m4a"
+                  className="hidden"
+                  onChange={(e) => onFile(k, e.target.files?.[0] ?? null)}
+                />
+                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onPick(k)}>
+                  <Upload className="h-3.5 w-3.5" />
+                </Button>
+                {has && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => onDelete(k)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       <Card className="p-6 space-y-4">
         <div className="flex items-start gap-3">

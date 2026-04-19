@@ -1,6 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { Library, ListMusic, Settings, Music2, Star, Radio } from "lucide-react";
+import { Library, ListMusic, Settings, Music2, Star, Radio, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const items = [
   { to: "/", label: "Biblioteca", icon: Library, end: true },

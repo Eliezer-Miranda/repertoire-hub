@@ -1,6 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { Library, ListMusic, Settings, Music2, Star, Radio } from "lucide-react";
+import { Library, ListMusic, Settings, Music2, Star, Radio, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const items = [
   { to: "/", label: "Biblioteca", icon: Library, end: true },
@@ -12,6 +15,16 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const { user, signOut } = useAuth();
+  const initial = (user?.user_metadata?.display_name || user?.email || "?")
+    .charAt(0)
+    .toUpperCase();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Sessão encerrada");
+  };
+
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2 px-6 border-b border-sidebar-border">
@@ -49,6 +62,30 @@ export function AppSidebar() {
         ))}
       </nav>
 
+      {user && (
+        <div className="p-3 border-t border-sidebar-border space-y-2">
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground text-sm font-semibold shrink-0">
+              {initial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium truncate">
+                {user.user_metadata?.display_name || user.email}
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
+      )}
     </aside>
   );
 }

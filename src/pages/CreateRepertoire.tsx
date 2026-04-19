@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLibrary } from "@/store/useLibrary";
 import { SongCard } from "@/components/SongCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import {
   DndContext,
   closestCenter,
@@ -22,12 +23,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, X, Save, Music2, Activity } from "lucide-react";
+import { GripVertical, X, Save, Music2, Activity, Sliders, CheckCircle2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Song, RepertoireItem } from "@/types/music";
 import { AlbumThumb } from "@/components/AlbumThumb";
 import { Switch } from "@/components/ui/switch";
+import { ALL_KEYS, getPad, listPads, type MusicalKey } from "@/lib/padsStore";
+import { renderClickWav, sanitizeFilename } from "@/lib/clickWav";
 
 type ClickConfig = { bpm: number; timeSignature: "2/4" | "3/4" | "4/4" | "6/8"; enabled: boolean };
 
@@ -130,6 +133,17 @@ export default function CreateRepertoire() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [service, setService] = useState<"manha" | "noite" | "especial" | "ensaio">("manha");
 
+  // Pad+Click globais aplicados a todas as faixas selecionadas
+  const [padKey, setPadKey] = useState<MusicalKey>("C");
+  const [globalBpm, setGlobalBpm] = useState(90);
+  const [globalSig, setGlobalSig] = useState<"2/4" | "3/4" | "4/4" | "6/8">("4/4");
+  const [availablePads, setAvailablePads] = useState<Record<string, { name: string; size: number }>>({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    listPads().then(setAvailablePads);
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -155,8 +169,8 @@ export default function CreateRepertoire() {
       return {
         ...cur,
         [id]: {
-          bpm: song?.bpm ?? 90,
-          timeSignature: "4/4",
+          bpm: song?.bpm ?? globalBpm,
+          timeSignature: globalSig,
           enabled: true,
         },
       };
@@ -171,7 +185,29 @@ export default function CreateRepertoire() {
     setSelectedIds(arrayMove(selectedIds, oldIdx, newIdx));
   };
 
-  const onSave = () => {
+  const applyGlobalToAll = () => {
+    setClicks((cur) => {
+      const next = { ...cur };
+      for (const id of selectedIds) {
+        next[id] = { bpm: globalBpm, timeSignature: globalSig, enabled: true };
+      }
+      return next;
+    });
+    toast.success("Click aplicado a todas as faixas selecionadas");
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  const onSave = async () => {
     if (!name.trim()) {
       toast.error("Informe um nome para o repertório.");
       return;
@@ -180,6 +216,7 @@ export default function CreateRepertoire() {
       toast.error("Selecione ao menos uma música.");
       return;
     }
+
     const items: RepertoireItem[] = selectedIds.map((sid, order) => {
       const c = clicks[sid];
       return {
@@ -190,6 +227,7 @@ export default function CreateRepertoire() {
         clickEnabled: c?.enabled ?? false,
       };
     });
+
     const id = addRepertoire({
       name,
       minister,
@@ -197,11 +235,55 @@ export default function CreateRepertoire() {
       service,
       items,
     });
+
+    setSaving(true);
     toast.success(`Repertório "${name}" criado!`, {
-      description: `${selectedIds.length} faixas serão copiadas para /storage/vs/${name}/`,
+      description: `Gerando arquivos da pasta click/...`,
     });
-    navigate(`/repertorios?id=${id}`);
+
+    // Geração dos WAVs (click + pad) por faixa
+    try {
+      const padEntry = await getPad(padKey);
+      const folderPrefix = sanitizeFilename(name);
+      let count = 0;
+
+      for (let i = 0; i < selectedSongs.length; i++) {
+        const song = selectedSongs[i];
+        const cfg = clicks[song.id] ?? { bpm: globalBpm, timeSignature: globalSig, enabled: true };
+        const order = String(i + 1).padStart(2, "0");
+        const baseName = sanitizeFilename(`${order}_${song.artist}-${song.title}`);
+
+        if (cfg.enabled) {
+          const blob = await renderClickWav({
+            bpm: cfg.bpm,
+            timeSignature: cfg.timeSignature,
+            durationSec: song.duration,
+          });
+          triggerDownload(blob, `${folderPrefix}__click__${baseName}_click.wav`);
+          count++;
+        }
+
+        if (padEntry) {
+          const ext = padEntry.name.split(".").pop() || "wav";
+          triggerDownload(padEntry.blob, `${folderPrefix}__click__${baseName}_pad-${padKey}.${ext}`);
+          count++;
+        }
+      }
+
+      toast.success(`${count} arquivo(s) gerados`, {
+        description: padEntry
+          ? `Pad ${padKey} + click — destino: /storage/vs/${name}/click/`
+          : `Apenas click gerado (nenhum pad para ${padKey}). Configure em Configurações.`,
+      });
+    } catch (e) {
+      toast.error("Erro ao gerar arquivos", { description: String(e) });
+    } finally {
+      setSaving(false);
+      navigate(`/repertorios?id=${id}`);
+    }
   };
+
+  const padAvailable = !!availablePads[padKey];
 
   return (
     <div className="flex flex-col lg:flex-row min-h-full">
@@ -268,6 +350,89 @@ export default function CreateRepertoire() {
           </div>
         </div>
 
+        {/* Painel global Pad + Click */}
+        <Card className="p-3 space-y-3 border-primary/30 bg-primary/5">
+          <div className="flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider">Pad & Click (faixa global)</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[11px]">Pad / Tom</Label>
+              <Select value={padKey} onValueChange={(v) => setPadKey(v as MusicalKey)}>
+                <SelectTrigger className="h-8 text-xs font-mono">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_KEYS.map((k) => (
+                    <SelectItem key={k} value={k}>
+                      <span className="font-mono">{k}</span>
+                      {availablePads[k] && <span className="text-success ml-2">●</span>}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1 text-[10px]">
+                {padAvailable ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3 text-success" />
+                    <span className="text-muted-foreground truncate">{availablePads[padKey].name}</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-3 w-3 text-warning" />
+                    <span className="text-warning">Sem pad para {padKey}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px]">Compasso</Label>
+              <Select value={globalSig} onValueChange={(v) => setGlobalSig(v as typeof globalSig)}>
+                <SelectTrigger className="h-8 text-xs font-mono">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2/4">2/4</SelectItem>
+                  <SelectItem value="3/4">3/4</SelectItem>
+                  <SelectItem value="4/4">4/4</SelectItem>
+                  <SelectItem value="6/8">6/8</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <div className="space-y-1 flex-1">
+              <Label className="text-[11px]">BPM (click)</Label>
+              <Input
+                type="number"
+                min={40}
+                max={240}
+                value={globalBpm}
+                onChange={(e) => setGlobalBpm(parseInt(e.target.value) || 0)}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={applyGlobalToAll}
+              disabled={selectedIds.length === 0}
+            >
+              Aplicar a todas
+            </Button>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            Ao salvar, será gerado um arquivo de click WAV + cópia do pad do tom escolhido na pasta{" "}
+            <code className="text-primary font-mono">click/</code> de cada música.
+          </p>
+        </Card>
+
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -294,7 +459,7 @@ export default function CreateRepertoire() {
                     <SortableRow
                       key={s.id}
                       song={s}
-                      click={clicks[s.id] ?? { bpm: s.bpm ?? 90, timeSignature: "4/4", enabled: true }}
+                      click={clicks[s.id] ?? { bpm: s.bpm ?? globalBpm, timeSignature: globalSig, enabled: true }}
                       onChange={(c) => setClicks((cur) => ({ ...cur, [s.id]: c }))}
                       onRemove={() => toggleSelect(s.id)}
                     />
@@ -309,9 +474,10 @@ export default function CreateRepertoire() {
           size="lg"
           className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold gap-2"
           onClick={onSave}
+          disabled={saving}
         >
           <Save className="h-4 w-4" />
-          Salvar repertório
+          {saving ? "Gerando arquivos…" : "Salvar repertório"}
         </Button>
       </aside>
     </div>

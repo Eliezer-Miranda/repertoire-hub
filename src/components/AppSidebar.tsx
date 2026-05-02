@@ -1,16 +1,14 @@
 import { NavLink } from "react-router-dom";
-import { Library, ListMusic, Settings, Music2, Star, Radio, LogOut } from "lucide-react";
+import { ListMusic, Settings, Music2, Star, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const items = [
-  { to: "/", label: "Biblioteca", icon: Library, end: true },
+  { to: "/", label: "Favoritos", icon: Star, end: true },
   { to: "/repertorios", label: "Repertórios", icon: ListMusic },
   { to: "/criar", label: "Criar Repertório", icon: Music2 },
-  { to: "/favoritos", label: "Favoritos", icon: Star },
-  { to: "/performance", label: "Modo Performance", icon: Radio },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 

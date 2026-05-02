@@ -42,6 +42,21 @@ const songs: Song[] = [];
 const albums: Album[] = [];
 const artists: Artist[] = [];
 
+// Extensões variadas (incluindo desconhecidas) para validar que NADA é filtrado.
+const extensions = ["mp3", "wav", "flac", "aiff", "ogg", "opus", "m4a", "wma", "xyz", ""];
+
+// Gera um caminho com profundidade aleatória de 1 a 10 níveis dentro de /storage/biblioteca
+function randomDeepPath(artist: string, album: string, title: string, ext: string, seed: number) {
+  const depth = 1 + (seed % 10); // 1..10 níveis extras
+  const buckets = ["worship", "ao-vivo", "estudio", "raros", "ensaios", "demos", "ministracao", "extras", "antigos", "novos"];
+  const segments: string[] = [];
+  for (let d = 0; d < depth; d++) {
+    segments.push(buckets[(seed + d) % buckets.length]);
+  }
+  const fname = ext ? `${title}.${ext}` : title; // sem extensão também é válido
+  return `/storage/biblioteca/${artist}/${album}/${segments.join("/")}/${fname}`;
+}
+
 artistsData.forEach((art, ai) => {
   let songCount = 0;
   art.albums.forEach((albName, alIdx) => {
@@ -50,6 +65,11 @@ artistsData.forEach((art, ai) => {
     trackList.forEach((title, ti) => {
       songIdCounter++;
       const coverIdx = (ai + alIdx + ti) % covers.length;
+      const ext = extensions[(ai + alIdx + ti) % extensions.length];
+      const knownFormats = ["mp3", "wav", "flac"] as const;
+      const fmtSafe = (knownFormats.includes(ext as typeof knownFormats[number])
+        ? ext
+        : "mp3") as Song["format"];
       songs.push({
         id: `s-${songIdCounter}`,
         title,
@@ -59,8 +79,8 @@ artistsData.forEach((art, ai) => {
         bpm: 60 + Math.floor(Math.random() * 80),
         key: keys[Math.floor(Math.random() * keys.length)],
         cover: covers[coverIdx],
-        filePath: `/storage/biblioteca/${art.name}/${albName}/${title}.mp3`,
-        format: "mp3",
+        filePath: randomDeepPath(art.name, albName, title, ext, songIdCounter),
+        format: fmtSafe,
         tags: [tagPool[Math.floor(Math.random() * tagPool.length)]],
         favorite: Math.random() > 0.75,
       });

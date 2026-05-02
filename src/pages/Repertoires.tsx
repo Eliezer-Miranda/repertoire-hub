@@ -1,7 +1,7 @@
 import { useLibrary } from "@/store/useLibrary";
 import { Button } from "@/components/ui/button";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Calendar, User2, Music2, Trash2, Download, Radio, Activity, Loader2, FileAudio } from "lucide-react";
+import { Plus, Calendar, User2, Music2, Trash2, Download, Activity, Loader2, FileAudio } from "lucide-react";
 import { Repertoire } from "@/types/music";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -155,9 +155,6 @@ export default function Repertoires() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 shrink-0 justify-end">
-                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                    <Link to="/performance"><Radio className="h-4 w-4" /> Performance</Link>
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -178,8 +175,8 @@ export default function Repertoires() {
               </div>
 
               <div className="rounded-xl bg-card border border-border/50 p-4 font-mono text-xs">
-                <div className="text-muted-foreground mb-1">Caminho de exportação SMB:</div>
-                <div className="text-primary">/storage/vs/{selected.name.replace(/\s+/g, "_")}/</div>
+                <div className="text-muted-foreground mb-1">Manifesto JSON gerado para Reaper/Lua:</div>
+                <div className="text-primary">{`\\\\192.168.2.177\\storage\\…  →  ${selected.name.replace(/\s+/g, "_")}.json`}</div>
               </div>
             </header>
 

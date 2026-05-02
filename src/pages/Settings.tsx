@@ -56,8 +56,9 @@ export default function Settings() {
           <div className="flex-1">
             <h2 className="font-semibold">Pads por tom</h2>
             <p className="text-xs text-muted-foreground">
-              Envie um arquivo de pad para cada tonalidade. Esses arquivos serão copiados para a pasta{" "}
-              <code className="text-primary font-mono">click/</code> de cada música ao salvar o repertório.
+              Cadastre um pad por tonalidade. Estes arquivos representam o conteúdo de{" "}
+              <code className="text-primary font-mono">\\192.168.2.177\storage\pads\&lt;tom&gt;.wav</code> e
+              o caminho será incluído no manifesto JSON gerado ao criar um repertório.
             </p>
           </div>
         </div>

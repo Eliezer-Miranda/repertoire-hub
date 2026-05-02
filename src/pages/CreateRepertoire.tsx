@@ -29,8 +29,9 @@ import { toast } from "sonner";
 import { Song, RepertoireItem } from "@/types/music";
 import { AlbumThumb } from "@/components/AlbumThumb";
 import { Switch } from "@/components/ui/switch";
-import { ALL_KEYS, getPad, listPads, type MusicalKey } from "@/lib/padsStore";
+import { ALL_KEYS, listPads, type MusicalKey } from "@/lib/padsStore";
 import { renderClickWav, sanitizeFilename } from "@/lib/clickWav";
+import { toUnc, padUnc, clickUncForSong } from "@/lib/networkPaths";
 
 type ClickConfig = { bpm: number; timeSignature: "2/4" | "3/4" | "4/4" | "6/8"; enabled: boolean };
 
@@ -237,15 +238,13 @@ export default function CreateRepertoire() {
     });
 
     setSaving(true);
-    toast.success(`Repertório "${name}" criado!`, {
-      description: `Gerando arquivos da pasta click/...`,
-    });
 
-    // Geração dos WAVs (click + pad) por faixa
     try {
-      const padEntry = await getPad(padKey);
       const folderPrefix = sanitizeFilename(name);
-      let count = 0;
+
+      // Monta manifesto JSON com caminhos de rede (UNC) para o Reaper/Lua
+      const manifestTracks = [];
+      let clickCount = 0;
 
       for (let i = 0; i < selectedSongs.length; i++) {
         const song = selectedSongs[i];
@@ -253,30 +252,65 @@ export default function CreateRepertoire() {
         const order = String(i + 1).padStart(2, "0");
         const baseName = sanitizeFilename(`${order}_${song.artist}-${song.title}`);
 
+        const songUnc = toUnc(song.filePath);
+        const padPath = padUnc(padKey);
+        const clickPath = cfg.enabled ? clickUncForSong(song.filePath) : null;
+
+        manifestTracks.push({
+          order: i + 1,
+          title: song.title,
+          artist: song.artist,
+          album: song.album,
+          duration: song.duration,
+          key: song.key ?? null,
+          bpm: song.bpm ?? null,
+          paths: {
+            song: songUnc,
+            pad: padPath,
+            click: clickPath,
+          },
+          click: cfg.enabled
+            ? { bpm: cfg.bpm, timeSignature: cfg.timeSignature }
+            : null,
+          padKey,
+        });
+
+        // Gera o WAV do click localmente para o usuário enviar ao destino indicado em paths.click
         if (cfg.enabled) {
           const blob = await renderClickWav({
             bpm: cfg.bpm,
             timeSignature: cfg.timeSignature,
             durationSec: song.duration,
           });
-          triggerDownload(blob, `${folderPrefix}__click__${baseName}_click.wav`);
-          count++;
-        }
-
-        if (padEntry) {
-          const ext = padEntry.name.split(".").pop() || "wav";
-          triggerDownload(padEntry.blob, `${folderPrefix}__click__${baseName}_pad-${padKey}.${ext}`);
-          count++;
+          triggerDownload(blob, `${folderPrefix}__${baseName}_click.wav`);
+          clickCount++;
         }
       }
 
-      toast.success(`${count} arquivo(s) gerados`, {
-        description: padEntry
-          ? `Pad ${padKey} + click — destino: /storage/vs/${name}/click/`
-          : `Apenas click gerado (nenhum pad para ${padKey}). Configure em Configurações.`,
+      const manifest = {
+        version: 1,
+        repertoire: {
+          id,
+          name,
+          minister,
+          date: new Date(date).toISOString(),
+          service,
+        },
+        padKey,
+        tracks: manifestTracks,
+        generatedAt: new Date().toISOString(),
+      };
+
+      const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], {
+        type: "application/json",
+      });
+      triggerDownload(manifestBlob, `${folderPrefix}.json`);
+
+      toast.success(`Repertório "${name}" criado!`, {
+        description: `JSON gerado com ${manifestTracks.length} faixas + ${clickCount} click(s) WAV.`,
       });
     } catch (e) {
-      toast.error("Erro ao gerar arquivos", { description: String(e) });
+      toast.error("Erro ao gerar manifesto", { description: String(e) });
     } finally {
       setSaving(false);
       navigate(`/repertorios?id=${id}`);
@@ -291,7 +325,7 @@ export default function CreateRepertoire() {
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Criar repertório</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Selecione faixas da biblioteca. Os arquivos serão copiados para <code className="text-primary font-mono text-xs">/storage/vs/</code> mantendo a estrutura para o Reaper.
+            Selecione faixas. Será gerado um <code className="text-primary font-mono text-xs">manifesto.json</code> com os caminhos de rede dos arquivos para o Reaper/Lua localizar — sem copiar áudios.
           </p>
         </div>
 
@@ -428,8 +462,7 @@ export default function CreateRepertoire() {
           </div>
 
           <p className="text-[10px] text-muted-foreground leading-tight">
-            Ao salvar, será gerado um arquivo de click WAV + cópia do pad do tom escolhido na pasta{" "}
-            <code className="text-primary font-mono">click/</code> de cada música.
+            Ao salvar é gerado um JSON com os caminhos UNC (<code className="text-primary font-mono">\\192.168.2.177\storage\…</code>) das músicas e do pad selecionado, mais um WAV de click por faixa.
           </p>
         </Card>
 

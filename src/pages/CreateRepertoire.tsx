@@ -329,12 +329,17 @@ export default function CreateRepertoire() {
           </p>
         </div>
 
-        <Input
-          placeholder="Buscar faixas para adicionar…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="h-11 max-w-md"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            placeholder="Buscar faixas para adicionar…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="h-11 max-w-md"
+          />
+          <span className="text-xs text-muted-foreground font-mono">
+            {filtered.length} de {songs.length} faixas (todas as pastas e extensões)
+          </span>
+        </div>
 
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
           {filtered.map((s) => (

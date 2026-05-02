@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function Favorites() {
-  const { songs, favorites, toggleFavorite } = useLibrary();
+  const { songs, favorites } = useLibrary();
   const [q, setQ] = useState("");
 
   const favSongs = useMemo(() => songs.filter((s) => favorites.has(s.id)), [songs, favorites]);

@@ -88,7 +88,7 @@ export default function Favorites() {
                   <SongCard
                     key={s.id}
                     song={s}
-                    onToggleFavorite={() => toggleFavorite(s.id)}
+                   
                   />
                 ))}
             </div>
@@ -106,7 +106,7 @@ export default function Favorites() {
                 <SongCard
                   key={s.id}
                   song={s}
-                  onToggleFavorite={() => toggleFavorite(s.id)}
+                 
                 />
               ))}
             </div>

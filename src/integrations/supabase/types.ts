@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      artists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          normalized_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          normalized_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          normalized_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -38,6 +62,159 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_jobs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          files_deactivated: number
+          files_seen: number
+          files_upserted: number
+          finished_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          files_deactivated?: number
+          files_seen?: number
+          files_upserted?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          files_deactivated?: number
+          files_seen?: number
+          files_upserted?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      song_files: {
+        Row: {
+          checksum: string | null
+          created_at: string
+          file_name: string
+          format: string
+          id: string
+          is_active: boolean
+          is_primary: boolean
+          relative_path: string
+          size_bytes: number | null
+          song_id: string
+          updated_at: string
+        }
+        Insert: {
+          checksum?: string | null
+          created_at?: string
+          file_name: string
+          format: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          relative_path: string
+          size_bytes?: number | null
+          song_id: string
+          updated_at?: string
+        }
+        Update: {
+          checksum?: string | null
+          created_at?: string
+          file_name?: string
+          format?: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          relative_path?: string
+          size_bytes?: number | null
+          song_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_files_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "song_files_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "v_song_catalog"
+            referencedColumns: ["song_id"]
+          },
+        ]
+      }
+      songs: {
+        Row: {
+          artist_id: string
+          bpm: number | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          is_active: boolean
+          musical_key: string | null
+          normalized_title: string | null
+          song_folder: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          bpm?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          musical_key?: string | null
+          normalized_title?: string | null
+          song_folder: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          bpm?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          musical_key?: string | null
+          normalized_title?: string | null
+          song_folder?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "songs_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "songs_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "v_song_catalog"
+            referencedColumns: ["artist_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -61,7 +238,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_song_catalog: {
+        Row: {
+          artist_id: string | null
+          artist_name: string | null
+          bpm: number | null
+          duration_seconds: number | null
+          musical_key: string | null
+          primary_format: string | null
+          primary_relative_path: string | null
+          song_folder: string | null
+          song_id: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {

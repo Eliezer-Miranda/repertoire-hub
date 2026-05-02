@@ -32,14 +32,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
 
-              {/* Rotas protegidas */}
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
+              {/* Rotas (login desativado) */}
+              <Route element={<AppLayout />}>
                 <Route path="/" element={<Library />} />
                 <Route path="/repertorios" element={<Repertoires />} />
                 <Route path="/criar" element={<CreateRepertoire />} />

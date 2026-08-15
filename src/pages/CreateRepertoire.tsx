@@ -521,15 +521,18 @@ export default function CreateRepertoire() {
           )}
         </div>
 
-        <Button
-          size="lg"
-          className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold gap-2"
-          onClick={onSave}
-          disabled={saving}
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Gerando arquivos…" : "Salvar repertório"}
-        </Button>
+        <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-1 bg-gradient-to-t from-card via-card/95 to-transparent">
+          <Button
+            size="lg"
+            className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold gap-2"
+            onClick={onSave}
+            disabled={saving}
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Gerando arquivos…" : "Salvar repertório"}
+          </Button>
+        </div>
+
       </aside>
     </div>
   );

@@ -3,12 +3,18 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Server, FolderOutput, Cpu, Code2, Music, Upload, Trash2, CheckCircle2 } from "lucide-react";
+import { Server, FolderOutput, Cpu, Code2, Music, Upload, Trash2, CheckCircle2, Database, RefreshCw } from "lucide-react";
 import { ALL_KEYS, deletePad, listPads, savePad, type MusicalKey } from "@/lib/padsStore";
 import { toast } from "sonner";
+import { useBibliotecaMap } from "@/hooks/useBibliotecaMap";
+import { useLibrary } from "@/store/useLibrary";
 
 export default function Settings() {
+  const { loading, load, loadFromFile, librarySource } = useBibliotecaMap(false);
+  const songCount = useLibrary((s) => s.songs.length);
+  const mapInputRef = useRef<HTMLInputElement | null>(null);
   const [pads, setPads] = useState<Record<string, { name: string; size: number }>>({});
+
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const refresh = async () => setPads(await listPads());

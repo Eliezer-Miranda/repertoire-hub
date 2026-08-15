@@ -3,12 +3,18 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Server, FolderOutput, Cpu, Code2, Music, Upload, Trash2, CheckCircle2 } from "lucide-react";
+import { Server, FolderOutput, Cpu, Code2, Music, Upload, Trash2, CheckCircle2, Database, RefreshCw } from "lucide-react";
 import { ALL_KEYS, deletePad, listPads, savePad, type MusicalKey } from "@/lib/padsStore";
 import { toast } from "sonner";
+import { useBibliotecaMap } from "@/hooks/useBibliotecaMap";
+import { useLibrary } from "@/store/useLibrary";
 
 export default function Settings() {
+  const { loading, load, loadFromFile, librarySource } = useBibliotecaMap(false);
+  const songCount = useLibrary((s) => s.songs.length);
+  const mapInputRef = useRef<HTMLInputElement | null>(null);
   const [pads, setPads] = useState<Record<string, { name: string; size: number }>>({});
+
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const refresh = async () => setPads(await listPads());
@@ -47,6 +53,43 @@ export default function Settings() {
           Ajustes do agente local e integração com o Reaper.
         </p>
       </header>
+
+      <Card className="p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+            <Database className="h-5 w-5 text-accent" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-semibold">Biblioteca (biblioteca-map.json)</h2>
+            <p className="text-xs text-muted-foreground">
+              A lista de músicas é lida do mapa gerado em{" "}
+              <code className="text-primary font-mono">/mnt/vs-dados/biblioteca-map.json</code>. Publique-o
+              em <code className="text-primary font-mono">/biblioteca-map.json</code> para carregamento
+              automático, ou importe o arquivo manualmente.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => load()} disabled={loading} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recarregar do servidor
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => mapInputRef.current?.click()} className="gap-2">
+            <Upload className="h-4 w-4" /> Importar JSON
+          </Button>
+          <input
+            ref={mapInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && loadFromFile(e.target.files[0])}
+          />
+          <span className="text-xs text-muted-foreground font-mono ml-auto">
+            {songCount} faixas {librarySource ? `· ${librarySource}` : "· dados de exemplo"}
+          </span>
+        </div>
+      </Card>
+
 
       <Card className="p-6 space-y-4">
         <div className="flex items-start gap-3">

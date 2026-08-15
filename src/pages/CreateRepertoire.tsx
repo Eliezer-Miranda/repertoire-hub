@@ -320,28 +320,40 @@ export default function CreateRepertoire() {
   const padAvailable = !!availablePads[padKey];
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-full">
-      <section className="flex-1 p-6 lg:p-8 space-y-5 border-r border-border min-w-0">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Criar repertório</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Selecione faixas. Será gerado um <code className="text-primary font-mono text-xs">manifesto.json</code> com os caminhos de rede dos arquivos para o Reaper/Lua localizar — sem copiar áudios.
+    <div className="flex h-full min-h-0 flex-col lg:flex-row">
+      <section className="flex-1 min-w-0 overflow-y-auto scrollbar-thin border-r border-border">
+        <div className="relative px-6 lg:px-8 pt-7 pb-5 bg-[image:var(--gradient-hero)]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">
+            <Music2 className="h-3 w-3" /> Biblioteca de rede
+          </div>
+          <h1 className="font-display text-4xl font-bold tracking-tight mt-3">Criar repertório</h1>
+          <p className="text-muted-foreground text-sm mt-1.5 max-w-2xl">
+            Selecione faixas. Será gerado um{" "}
+            <code className="text-primary font-mono text-xs">manifesto.json</code> com os caminhos de rede
+            para o Reaper/Lua localizar — sem copiar áudios.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Input
-            placeholder="Buscar faixas para adicionar…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="h-11 max-w-md"
-          />
-          <span className="text-xs text-muted-foreground font-mono">
-            {filtered.length} de {songs.length} faixas (todas as pastas e extensões)
+        <div className="sticky top-0 z-10 px-6 lg:px-8 py-3 bg-background/80 backdrop-blur-xl border-y border-border/60 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Input
+              placeholder="Buscar faixas para adicionar…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="h-11 rounded-xl bg-muted/40 border-border/60"
+            />
+          </div>
+          <span className="text-[11px] text-muted-foreground font-mono">
+            {filtered.length} / {songs.length} faixas
           </span>
+          {selectedIds.length > 0 && (
+            <span className="text-[11px] font-mono rounded-full bg-primary/15 text-primary px-2.5 py-1">
+              {selectedIds.length} selecionadas
+            </span>
+          )}
         </div>
 
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+        <div className="p-6 lg:p-8 pt-5 grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
           {filtered.map((s) => (
             <SongCard
               key={s.id}
@@ -354,7 +366,8 @@ export default function CreateRepertoire() {
         </div>
       </section>
 
-      <aside className="w-full lg:w-[420px] shrink-0 bg-card/50 backdrop-blur p-6 space-y-5">
+      <aside className="w-full lg:w-[430px] shrink-0 lg:h-full overflow-y-auto scrollbar-thin bg-card/60 backdrop-blur-xl p-6 space-y-5">
+
         <div>
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             Repertório
@@ -508,15 +521,18 @@ export default function CreateRepertoire() {
           )}
         </div>
 
-        <Button
-          size="lg"
-          className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold gap-2"
-          onClick={onSave}
-          disabled={saving}
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Gerando arquivos…" : "Salvar repertório"}
-        </Button>
+        <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-1 bg-gradient-to-t from-card via-card/95 to-transparent">
+          <Button
+            size="lg"
+            className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold gap-2"
+            onClick={onSave}
+            disabled={saving}
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Gerando arquivos…" : "Salvar repertório"}
+          </Button>
+        </div>
+
       </aside>
     </div>
   );

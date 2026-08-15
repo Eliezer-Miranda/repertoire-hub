@@ -5,10 +5,14 @@ import { ThemeToggle } from "./theme-toggle";
 import { SystemStatus } from "./SystemStatus";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useBibliotecaMap } from "@/hooks/useBibliotecaMap";
 
 export function AppLayout() {
+  useBibliotecaMap(true);
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+
       <AppSidebar />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="border-b border-border bg-card/40 backdrop-blur-xl shrink-0">

@@ -50,6 +50,43 @@ export default function Settings() {
 
       <Card className="p-6 space-y-4">
         <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+            <Database className="h-5 w-5 text-accent" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-semibold">Biblioteca (biblioteca-map.json)</h2>
+            <p className="text-xs text-muted-foreground">
+              A lista de músicas é lida do mapa gerado em{" "}
+              <code className="text-primary font-mono">/mnt/vs-dados/biblioteca-map.json</code>. Publique-o
+              em <code className="text-primary font-mono">/biblioteca-map.json</code> para carregamento
+              automático, ou importe o arquivo manualmente.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => load()} disabled={loading} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recarregar do servidor
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => mapInputRef.current?.click()} className="gap-2">
+            <Upload className="h-4 w-4" /> Importar JSON
+          </Button>
+          <input
+            ref={mapInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && loadFromFile(e.target.files[0])}
+          />
+          <span className="text-xs text-muted-foreground font-mono ml-auto">
+            {songCount} faixas {librarySource ? `· ${librarySource}` : "· dados de exemplo"}
+          </span>
+        </div>
+      </Card>
+
+
+      <Card className="p-6 space-y-4">
+        <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Music className="h-5 w-5 text-primary" />
           </div>

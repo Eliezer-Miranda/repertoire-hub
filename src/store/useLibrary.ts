@@ -5,6 +5,7 @@ import { mockRepertoires, mockSongs } from "@/data/mockLibrary";
 
 type LibraryState = {
   songs: Song[];
+  librarySource: string | null;
   repertoires: Repertoire[];
   favorites: Set<string>;
   currentSongId: string | null;
@@ -14,10 +15,14 @@ type LibraryState = {
   playSong: (id: string) => void;
   togglePlay: () => void;
 
+  setSongs: (songs: Song[], source: string) => void;
+  resetSongs: () => void;
+
   addRepertoire: (r: Omit<Repertoire, "id" | "createdAt">) => string;
   updateRepertoire: (id: string, patch: Partial<Repertoire>) => void;
   deleteRepertoire: (id: string) => void;
 };
+
 
 export const useLibrary = create<LibraryState>()(
   persist(

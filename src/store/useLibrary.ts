@@ -28,10 +28,15 @@ export const useLibrary = create<LibraryState>()(
   persist(
     (set) => ({
       songs: mockSongs,
+      librarySource: null,
       repertoires: mockRepertoires,
       favorites: new Set(mockSongs.filter((s) => s.favorite).map((s) => s.id)),
       currentSongId: null,
       isPlaying: false,
+
+      setSongs: (songs, source) => set({ songs, librarySource: source }),
+      resetSongs: () => set({ songs: mockSongs, librarySource: null }),
+
 
       toggleFavorite: (id) =>
         set((state) => {

@@ -32,6 +32,13 @@ import { Switch } from "@/components/ui/switch";
 import { ALL_KEYS, listPads, type MusicalKey } from "@/lib/padsStore";
 import { renderClickWav, sanitizeFilename } from "@/lib/clickWav";
 import { toUnc, padUnc, clickUncForSong } from "@/lib/networkPaths";
+import {
+  REPERTOIRE_FILE,
+  repertoireFolderName,
+  repertoireUncPath,
+  repertoireWindowsPath,
+  saveRepertoireToAgent,
+} from "@/lib/agentApi";
 
 type ClickConfig = { bpm: number; timeSignature: "2/4" | "3/4" | "4/4" | "6/8"; enabled: boolean };
 
@@ -213,6 +220,10 @@ export default function CreateRepertoire() {
       toast.error("Informe um nome para o repertório.");
       return;
     }
+    if (!minister.trim()) {
+      toast.error("Informe o nome do ministro.");
+      return;
+    }
     if (selectedIds.length === 0) {
       toast.error("Selecione ao menos uma música.");
       return;
@@ -241,6 +252,9 @@ export default function CreateRepertoire() {
 
     try {
       const folderPrefix = sanitizeFilename(name);
+      const outputFolder = repertoireFolderName(minister.trim(), date);
+      const outputWindowsPath = repertoireWindowsPath(outputFolder);
+      const outputUncPath = repertoireUncPath(outputFolder);
 
       // Monta manifesto JSON com caminhos de rede (UNC) para o Reaper/Lua
       const manifestTracks = [];
@@ -292,23 +306,36 @@ export default function CreateRepertoire() {
         repertoire: {
           id,
           name,
-          minister,
+          minister: minister.trim(),
           date: new Date(date).toISOString(),
           service,
+        },
+        output: {
+          folder: outputFolder,
+          file: REPERTOIRE_FILE,
+          windowsPath: outputWindowsPath,
+          uncPath: outputUncPath,
         },
         padKey,
         tracks: manifestTracks,
         generatedAt: new Date().toISOString(),
       };
 
-      const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], {
-        type: "application/json",
-      });
-      triggerDownload(manifestBlob, `${folderPrefix}.json`);
-
-      toast.success(`Repertório "${name}" criado!`, {
-        description: `JSON gerado com ${manifestTracks.length} faixas + ${clickCount} click(s) WAV.`,
-      });
+      try {
+        await saveRepertoireToAgent(minister.trim(), date, manifest);
+        toast.success(`Repertório "${name}" criado!`, {
+          description: `${outputWindowsPath} gravado com ${manifestTracks.length} faixas + ${clickCount} click(s) WAV.`,
+        });
+      } catch (agentErr) {
+        const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], {
+          type: "application/json",
+        });
+        triggerDownload(manifestBlob, REPERTOIRE_FILE);
+        toast.warning(`Agente indisponível — ${REPERTOIRE_FILE} baixado no navegador`, {
+          description: `Copie para ${outputWindowsPath}. (${String(agentErr instanceof Error ? agentErr.message : agentErr)})`,
+          duration: 10000,
+        });
+      }
     } catch (e) {
       toast.error("Erro ao gerar manifesto", { description: String(e) });
     } finally {
@@ -328,9 +355,10 @@ export default function CreateRepertoire() {
           </div>
           <h1 className="font-display text-4xl font-bold tracking-tight mt-3">Criar repertório</h1>
           <p className="text-muted-foreground text-sm mt-1.5 max-w-2xl">
-            Selecione faixas. Será gerado um{" "}
-            <code className="text-primary font-mono text-xs">manifesto.json</code> com os caminhos de rede
-            para o Reaper/Lua localizar — sem copiar áudios.
+            Selecione faixas. Será gravado um{" "}
+            <code className="text-primary font-mono text-xs">repertorio.json</code> em{" "}
+            <code className="text-primary font-mono text-xs">S:\VS\&lt;Ministro_Data&gt;\</code> com os
+            caminhos de rede para o Reaper/Lua localizar — sem copiar áudios.
           </p>
         </div>
 
@@ -480,7 +508,9 @@ export default function CreateRepertoire() {
           </div>
 
           <p className="text-[10px] text-muted-foreground leading-tight">
-            Ao salvar é gerado um JSON com os caminhos UNC (<code className="text-primary font-mono">\\192.168.2.177\storage\…</code>) das músicas e do pad selecionado, mais um WAV de click por faixa.
+            Ao salvar, <code className="text-primary font-mono">repertorio.json</code> é gravado em{" "}
+            <code className="text-primary font-mono">S:\VS\{minister.trim() ? repertoireFolderName(minister.trim(), date) : "<Ministro_Data>"}\</code>{" "}
+            com os caminhos UNC (<code className="text-primary font-mono">\\192.168.2.177\storage\…</code>) das músicas e do pad selecionado, mais um WAV de click por faixa.
           </p>
         </Card>
 

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { AlbumThumb } from "@/components/AlbumThumb";
 import { renderClickWav, downloadBlob, sanitizeFilename } from "@/lib/clickWav";
 import { toast } from "sonner";
+import { repertoireFolderName, repertoireWindowsPath } from "@/lib/agentApi";
 
 const serviceLabels = {
   manha: "Manhã",
@@ -176,7 +177,11 @@ export default function Repertoires() {
 
               <div className="rounded-xl bg-card border border-border/50 p-4 font-mono text-xs">
                 <div className="text-muted-foreground mb-1">Manifesto JSON gerado para Reaper/Lua:</div>
-                <div className="text-primary">{`\\\\192.168.2.177\\storage\\…  →  ${selected.name.replace(/\s+/g, "_")}.json`}</div>
+                <div className="text-primary">
+                  {selected.minister
+                    ? repertoireWindowsPath(repertoireFolderName(selected.minister, selected.date))
+                    : `${selected.name.replace(/\s+/g, "_")}.json`}
+                </div>
               </div>
             </header>
 

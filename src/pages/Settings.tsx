@@ -232,7 +232,7 @@ export default function Settings() {
         <div className="rounded-lg bg-background p-3 font-mono text-[11px] text-muted-foreground space-y-1 mt-2">
           <div><span className="text-success">GET</span>  /api/library          → indexação</div>
           <div><span className="text-success">GET</span>  /api/songs/:id/audio  → stream</div>
-          <div><span className="text-accent">POST</span> /api/repertoires      → cria + copia</div>
+          <div><span className="text-accent">POST</span> /api/repertorios      → grava S:\VS\&lt;Ministro_Data&gt;\repertorio.json</div>
           <div><span className="text-success">GET</span>  /api/analyze/:id      → BPM + tom</div>
         </div>
         <Button variant="outline" className="w-full mt-2">Testar conexão (em breve)</Button>
